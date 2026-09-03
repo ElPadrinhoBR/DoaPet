@@ -23,8 +23,12 @@
         "backgroundColor": "#14B8A6"
       },
       "permissions": [
-        "ACCESS_COARSE_LOCATION",
-        "ACCESS_FINE_LOCATION"
+        "android.permission.ACCESS_COARSE_LOCATION",
+        "android.permission.ACCESS_FINE_LOCATION",
+        "android.permission.RECORD_AUDIO",
+        "android.permission.MODIFY_AUDIO_SETTINGS",
+        "android.permission.FOREGROUND_SERVICE",
+        "android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK"
       ],
       "config": {
         "googleMaps": {
@@ -40,6 +44,12 @@
       "expo-image-picker",
       "expo-web-browser",
       "expo-audio"
-    ]
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "d1c9197d-c1b4-408f-ba0a-3c7440dc32f6"
+      }
+    },
+    "owner": "xamabr"
   }
 }
