@@ -1,0 +1,45 @@
+{
+  "expo": {
+    "name": "DoaPet",
+    "slug": "doapet",
+    "version": "1.0.0",
+    "scheme": "doapet",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "light",
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.doapet.app",
+      "icon": "./assets/icon.png",
+      "infoPlist": {
+        "NSLocationWhenInUseUsageDescription": "O DoaPet usa sua localização para encontrar pets e alertas próximos a você.",
+        "NSPhotoLibraryUsageDescription": "O DoaPet precisa acessar suas fotos para enviar imagens dos pets."
+      }
+    },
+    "android": {
+      "package": "com.doapet.app",
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#14B8A6"
+      },
+      "permissions": [
+        "ACCESS_COARSE_LOCATION",
+        "ACCESS_FINE_LOCATION"
+      ],
+      "config": {
+        "googleMaps": {
+          "apiKey": "SUA_GOOGLE_MAPS_API_KEY_AQUI"
+        }
+      }
+    },
+    "web": {
+      "bundler": "metro"
+    },
+    "plugins": [
+      "expo-location",
+      "expo-image-picker",
+      "expo-web-browser",
+      "expo-audio"
+    ]
+  }
+}
