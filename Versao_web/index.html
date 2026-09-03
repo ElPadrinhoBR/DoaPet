@@ -1,0 +1,771 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>DoaPet 🐾 — Adoção de Animais & Alertas SOS</title>
+  <link rel="icon" href="./logo.png" type="image/png" />
+
+  <!-- Google Fonts & Leaflet CSS -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+
+  <style>
+    :root {
+      --primary: #0D9488;
+      --primary-dark: #0F766E;
+      --primary-light: #CCFBF1;
+      --accent: #F59E0B;
+      --danger: #EF4444;
+      --background: #F8FAFC;
+      --surface: #FFFFFF;
+      --text: #0F172A;
+      --text-muted: #64748B;
+      --border: #E2E8F0;
+      --radius: 16px;
+      --shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.08);
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      font-family: 'Plus Jakarta Sans', sans-serif;
+    }
+
+    body {
+      background-color: var(--background);
+      color: var(--text);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* Top Navigation Header */
+    header {
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      position: sticky;
+      top: 0;
+      z-index: 1000;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.03);
+    }
+
+    .header-container {
+      max-width: 1240px;
+      margin: 0 auto;
+      padding: 12px 24px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .logo-area {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      text-decoration: none;
+      color: inherit;
+    }
+
+    .logo-img {
+      width: 44px;
+      height: 44px;
+      border-radius: 12px;
+      object-fit: cover;
+      box-shadow: 0 2px 8px rgba(13, 148, 136, 0.25);
+    }
+
+    .brand-name {
+      font-size: 22px;
+      font-weight: 800;
+      color: var(--primary-dark);
+      letter-spacing: -0.5px;
+    }
+
+    .brand-badge {
+      background: var(--primary-light);
+      color: var(--primary-dark);
+      font-size: 11px;
+      font-weight: 700;
+      padding: 3px 8px;
+      border-radius: 20px;
+      margin-left: 6px;
+    }
+
+    .nav-tabs {
+      display: flex;
+      gap: 8px;
+    }
+
+    .nav-btn {
+      background: none;
+      border: none;
+      padding: 10px 18px;
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--text-muted);
+      border-radius: 10px;
+      cursor: pointer;
+      transition: all 0.2s;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .nav-btn:hover {
+      background: #F1F5F9;
+      color: var(--text);
+    }
+
+    .nav-btn.active {
+      background: var(--primary);
+      color: white;
+    }
+
+    /* Main Container */
+    main {
+      flex: 1;
+      max-width: 1240px;
+      width: 100%;
+      margin: 0 auto;
+      padding: 24px;
+    }
+
+    /* Filter Bar */
+    .filter-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 24px;
+      flex-wrap: wrap;
+      gap: 16px;
+    }
+
+    .chips-group {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .chip {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      padding: 8px 16px;
+      border-radius: 30px;
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text-muted);
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+
+    .chip:hover, .chip.active {
+      border-color: var(--primary);
+      background: var(--primary-light);
+      color: var(--primary-dark);
+    }
+
+    /* Grid of Pets & Alerts */
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      gap: 24px;
+    }
+
+    /* Pet Card */
+    .card {
+      background: var(--surface);
+      border-radius: var(--radius);
+      overflow: hidden;
+      border: 1px solid var(--border);
+      box-shadow: var(--shadow);
+      transition: transform 0.2s, box-shadow 0.2s;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .card:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 12px 28px -4px rgba(0, 0, 0, 0.12);
+    }
+
+    .card-photo-container {
+      position: relative;
+      width: 100%;
+      height: 220px;
+      background: #E2E8F0;
+      overflow: hidden;
+    }
+
+    .card-photo {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    .species-tag {
+      position: absolute;
+      top: 12px;
+      left: 12px;
+      background: rgba(255, 255, 255, 0.92);
+      backdrop-filter: blur(4px);
+      padding: 4px 10px;
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: 700;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+    }
+
+    .sos-badge {
+      position: absolute;
+      top: 12px;
+      right: 12px;
+      background: var(--danger);
+      color: white;
+      padding: 4px 12px;
+      border-radius: 20px;
+      font-size: 11px;
+      font-weight: 800;
+      letter-spacing: 0.5px;
+    }
+
+    .card-body {
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      flex: 1;
+    }
+
+    .card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      margin-bottom: 4px;
+    }
+
+    .pet-name {
+      font-size: 18px;
+      font-weight: 800;
+      color: var(--text);
+    }
+
+    .pet-meta {
+      font-size: 13px;
+      color: var(--text-muted);
+      font-weight: 500;
+      margin-bottom: 10px;
+    }
+
+    .pet-location {
+      font-size: 12px;
+      color: var(--primary-dark);
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      margin-bottom: 12px;
+    }
+
+    .pet-desc {
+      font-size: 13px;
+      color: #475569;
+      line-height: 1.5;
+      margin-bottom: 16px;
+      flex: 1;
+      display: -webkit-box;
+      -webkit-line-clamp: 3;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+
+    .pet-badges {
+      display: flex;
+      gap: 6px;
+      flex-wrap: wrap;
+      margin-bottom: 16px;
+    }
+
+    .mini-badge {
+      background: #F1F5F9;
+      color: #475569;
+      font-size: 11px;
+      padding: 3px 8px;
+      border-radius: 6px;
+      font-weight: 600;
+    }
+
+    .btn-action {
+      background: var(--primary);
+      color: white;
+      border: none;
+      border-radius: 10px;
+      padding: 12px;
+      font-weight: 700;
+      font-size: 14px;
+      cursor: pointer;
+      transition: background 0.2s;
+      width: 100%;
+      text-align: center;
+      text-decoration: none;
+      display: inline-block;
+    }
+
+    .btn-action:hover {
+      background: var(--primary-dark);
+    }
+
+    .btn-whatsapp {
+      background: #25D366;
+      color: white;
+    }
+
+    .btn-whatsapp:hover {
+      background: #1EBE5D;
+    }
+
+    /* Interactive Map View */
+    #map-view {
+      display: none;
+      width: 100%;
+      height: 650px;
+      border-radius: var(--radius);
+      overflow: hidden;
+      border: 1px solid var(--border);
+      box-shadow: var(--shadow);
+    }
+
+    /* Modal Details */
+    .modal-overlay {
+      display: none;
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(15, 23, 42, 0.6);
+      backdrop-filter: blur(4px);
+      z-index: 2000;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+
+    .modal-content {
+      background: var(--surface);
+      max-width: 600px;
+      width: 100%;
+      border-radius: var(--radius);
+      overflow: hidden;
+      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+      max-height: 90vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .modal-photo {
+      width: 100%;
+      height: 280px;
+      object-fit: cover;
+      background: #E2E8F0;
+    }
+
+    .modal-body {
+      padding: 24px;
+      overflow-y: auto;
+    }
+
+    .close-btn {
+      background: #F1F5F9;
+      border: none;
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      cursor: pointer;
+      font-weight: bold;
+      font-size: 16px;
+      position: absolute;
+      top: 16px;
+      right: 16px;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+      z-index: 10;
+    }
+
+    .loading-state {
+      text-align: center;
+      padding: 60px 20px;
+      color: var(--text-muted);
+    }
+
+    .spinner {
+      width: 40px;
+      height: 40px;
+      border: 4px solid var(--border);
+      border-top-color: var(--primary);
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+      margin: 0 auto 16px;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    footer {
+      background: var(--surface);
+      border-top: 1px solid var(--border);
+      padding: 24px;
+      text-align: center;
+      color: var(--text-muted);
+      font-size: 13px;
+      margin-top: 40px;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Header -->
+  <header>
+    <div class="header-container">
+      <a href="#" class="logo-area">
+        <img src="./logo.png" alt="DoaPet" class="logo-img" />
+        <span class="brand-name">DoaPet 🐾</span>
+        <span class="brand-badge">Versão Web</span>
+      </a>
+
+      <nav class="nav-tabs">
+        <button class="nav-btn active" id="tab-vitrine" onclick="switchTab('vitrine')">🐶 Vitrine de Adoção</button>
+        <button class="nav-btn" id="tab-sos" onclick="switchTab('sos')">🆘 Alertas SOS Rua</button>
+        <button class="nav-btn" id="tab-mapa" onclick="switchTab('mapa')">🗺️ Mapa Interativo</button>
+      </nav>
+    </div>
+  </header>
+
+  <!-- Main Content -->
+  <main>
+    <!-- Filter Bar -->
+    <div class="filter-bar" id="filters-container">
+      <div class="chips-group">
+        <button class="chip active" onclick="setSpeciesFilter('todos')">🐾 Todos</button>
+        <button class="chip" onclick="setSpeciesFilter('cachorro')">🐶 Cachorros</button>
+        <button class="chip" onclick="setSpeciesFilter('gato')">🐱 Gatos</button>
+      </div>
+      <div style="font-size: 14px; font-weight: 600; color: var(--text-muted);" id="counter-info">
+        Carregando dados do banco...
+      </div>
+    </div>
+
+    <!-- Grid View -->
+    <div class="grid" id="items-grid">
+      <div class="loading-state" style="grid-column: 1/-1;">
+        <div class="spinner"></div>
+        <p>Conectando ao Firebase Firestore e carregando animais reais...</p>
+      </div>
+    </div>
+
+    <!-- Map View -->
+    <div id="map-view"></div>
+  </main>
+
+  <!-- Modal Detalhes do Animal -->
+  <div class="modal-overlay" id="detail-modal" onclick="closeModal(event)">
+    <div class="modal-content" style="position: relative;" onclick="event.stopPropagation()">
+      <button class="close-btn" onclick="closeModalDirect()">✕</button>
+      <img id="modal-img" class="modal-photo" src="" alt="Pet" />
+      <div class="modal-body">
+        <div style="display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 4px;">
+          <h2 id="modal-name" style="font-size: 24px; font-weight: 800;">Nome do Pet</h2>
+          <span id="modal-species" style="font-size: 14px; font-weight: 700; color: var(--primary);">Espécie</span>
+        </div>
+        <p id="modal-location" style="font-size: 13px; color: var(--text-muted); margin-bottom: 12px; font-weight: 600;">📍 Localização</p>
+        <div id="modal-badges" class="pet-badges"></div>
+        <p id="modal-desc" style="font-size: 14px; color: #334155; line-height: 1.6; margin-bottom: 20px;">História do pet...</p>
+        <div id="modal-actions"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Footer -->
+  <footer>
+    <p>🐾 <strong>DoaPet</strong> — Plataforma comunitária de adoção responsável de animais.</p>
+    <p style="margin-top: 6px; font-size: 12px;">Conectado diretamente ao Cloud Firestore oficial do aplicativo móvel.</p>
+  </footer>
+
+  <!-- Firebase v10 SDK (Modular via CDN) -->
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-app.js";
+    import { getFirestore, collection, getDocs, query, where } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js";
+
+    // Credenciais oficiais do projeto DoaPet
+    const firebaseConfig = {
+      apiKey: "AIzaSyDLhtlUreBHjAr0tMbHMNPM8umAmxWiTPo",
+      authDomain: "doapet-b8a55.firebaseapp.com",
+      projectId: "doapet-b8a55",
+      storageBucket: "doapet-b8a55.firebasestorage.app",
+      messagingSenderId: "428930977134",
+      appId: "1:428930977134:web:d96019bc0be7623233457f"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+
+    let allPets = [];
+    let allSosAlerts = [];
+    let currentTab = 'vitrine';
+    let currentSpecies = 'todos';
+    let leafletMap = null;
+
+    async function loadData() {
+      try {
+        // 1. Busca Pets Disponíveis
+        const petsQuery = query(collection(db, 'pets'), where('status', '==', 'available'));
+        const petsSnap = await getDocs(petsQuery);
+        allPets = petsSnap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+
+        // 2. Busca Alertas SOS Abertos
+        const sosQuery = query(collection(db, 'sos_alerts'), where('status', '==', 'open'));
+        const sosSnap = await getDocs(sosQuery);
+        allSosAlerts = sosSnap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+
+        renderCurrentView();
+      } catch (err) {
+        console.error("Erro ao carregar dados do Firebase:", err);
+        document.getElementById('items-grid').innerHTML = `
+          <div class="loading-state" style="grid-column: 1/-1; color: var(--danger);">
+            <p>⚠️ Não foi possível carregar os animais do banco de dados.</p>
+            <p style="font-size: 12px; margin-top: 8px;">Detalhe: ${err.message}</p>
+          </div>
+        `;
+      }
+    }
+
+    window.switchTab = function(tab) {
+      currentTab = tab;
+      document.querySelectorAll('.nav-btn').forEach(btn => btn.classList.remove('active'));
+      document.getElementById(`tab-${tab}`).classList.add('active');
+
+      const filters = document.getElementById('filters-container');
+      const grid = document.getElementById('items-grid');
+      const mapEl = document.getElementById('map-view');
+
+      if (tab === 'mapa') {
+        filters.style.display = 'none';
+        grid.style.display = 'none';
+        mapEl.style.display = 'block';
+        initOrUpdateMap();
+      } else {
+        filters.style.display = 'flex';
+        grid.style.display = 'grid';
+        mapEl.style.display = 'none';
+        renderCurrentView();
+      }
+    };
+
+    window.setSpeciesFilter = function(species) {
+      currentSpecies = species;
+      document.querySelectorAll('.chip').forEach(c => c.classList.remove('active'));
+      event.target.classList.add('active');
+      renderCurrentView();
+    };
+
+    function renderCurrentView() {
+      const grid = document.getElementById('items-grid');
+      const counter = document.getElementById('counter-info');
+
+      if (currentTab === 'vitrine') {
+        let filtered = allPets;
+        if (currentSpecies !== 'todos') {
+          filtered = allPets.filter(p => (p.species || '').toLowerCase() === currentSpecies);
+        }
+
+        counter.textContent = `${filtered.length} animal(is) disponível(is) para adoção`;
+
+        if (filtered.length === 0) {
+          grid.innerHTML = `
+            <div class="loading-state" style="grid-column: 1/-1;">
+              <p style="font-size: 40px; margin-bottom: 12px;">🐾</p>
+              <h3>Nenhum animal cadastrado nesta categoria</h3>
+              <p>Cadastre um novo pet pelo aplicativo DoaPet!</p>
+            </div>
+          `;
+          return;
+        }
+
+        grid.innerHTML = filtered.map(pet => {
+          const photo = (pet.photos && pet.photos[0]) ? pet.photos[0] : 'https://images.unsplash.com/photo-1543466835-00a7907e9de1?w=800';
+          const speciesIcon = (pet.species === 'gato') ? '🐱 Gato' : (pet.species === 'cachorro') ? '🐶 Cachorro' : '🐾 Outro';
+          const genderText = pet.gender === 'femea' ? 'Fêmea' : 'Macho';
+
+          return `
+            <div class="card" onclick="openPetModal('${pet.id}')" style="cursor: pointer;">
+              <div class="card-photo-container">
+                <img src="${photo}" alt="${pet.name}" class="card-photo" />
+                <span class="species-tag">${speciesIcon}</span>
+              </div>
+              <div class="card-body">
+                <div class="card-header">
+                  <h3 class="pet-name">${pet.name}</h3>
+                  <span style="font-size: 13px; font-weight: 700; color: var(--primary);">${genderText}</span>
+                </div>
+                <p class="pet-meta">${pet.breed || 'SRD'} • Porte ${pet.size || 'Médio'}</p>
+                <div class="pet-location">📍 ${pet.locationHint || 'Local não especificado'}</div>
+                <p class="pet-desc">${pet.description || 'Sem descrição informada.'}</p>
+                <div class="pet-badges">
+                  ${pet.medical?.vaccinated ? '<span class="mini-badge">💉 Vacinado</span>' : ''}
+                  ${pet.medical?.neutered ? '<span class="mini-badge">✂️ Castrado</span>' : ''}
+                  ${pet.medical?.dewormed ? '<span class="mini-badge">🪱 Vermifugado</span>' : ''}
+                </div>
+                <button class="btn-action">Ver Detalhes & Adotar 🐾</button>
+              </div>
+            </div>
+          `;
+        }).join('');
+
+      } else if (currentTab === 'sos') {
+        counter.textContent = `${allSosAlerts.length} alerta(s) de resgate na comunidade`;
+
+        if (allSosAlerts.length === 0) {
+          grid.innerHTML = `
+            <div class="loading-state" style="grid-column: 1/-1;">
+              <p style="font-size: 40px; margin-bottom: 12px;">✅</p>
+              <h3>Nenhum alerta de resgate em aberto!</h3>
+              <p>Nenhum animal em risco foi reportado no momento.</p>
+            </div>
+          `;
+          return;
+        }
+
+        grid.innerHTML = allSosAlerts.map(sos => {
+          const photo = (sos.photos && sos.photos[0]) ? sos.photos[0] : 'https://images.unsplash.com/photo-1548767797-d8c844163c4c?w=800';
+          return `
+            <div class="card">
+              <div class="card-photo-container">
+                <img src="${photo}" alt="SOS" class="card-photo" />
+                <span class="sos-badge">🆘 RESGATE URGENTE</span>
+              </div>
+              <div class="card-body">
+                <h3 class="pet-name" style="margin-bottom: 6px;">Animal em Risco</h3>
+                <div class="pet-location">📍 ${sos.addressHint || 'Coordenadas registradas'}</div>
+                <p class="pet-desc">${sos.description || 'Precisa de resgate urgente.'}</p>
+                <a href="https://www.google.com/maps/dir/?api=1&destination=${sos.location?.latitude},${sos.location?.longitude}" target="_blank" class="btn-action" style="background: var(--danger); text-align: center;">
+                  🗺️ Traçar Rota de Resgate
+                </a>
+              </div>
+            </div>
+          `;
+        }).join('');
+      }
+    }
+
+    // Modal Details logic
+    window.openPetModal = function(petId) {
+      const pet = allPets.find(p => p.id === petId);
+      if (!pet) return;
+
+      document.getElementById('modal-name').textContent = pet.name;
+      document.getElementById('modal-species').textContent = `${pet.species === 'gato' ? '🐱 Gato' : '🐶 Cachorro'} • ${pet.gender === 'femea' ? 'Fêmea' : 'Macho'}`;
+      document.getElementById('modal-location').textContent = `📍 Localização: ${pet.locationHint || 'Rio de Janeiro / Brasil'}`;
+      document.getElementById('modal-desc').textContent = pet.description || 'Sem história fornecida.';
+
+      const photo = (pet.photos && pet.photos[0]) ? pet.photos[0] : 'https://images.unsplash.com/photo-1543466835-00a7907e9de1?w=800';
+      document.getElementById('modal-img').src = photo;
+
+      let badgesHtml = '';
+      if (pet.medical?.vaccinated) badgesHtml += '<span class="mini-badge">💉 Vacinado</span>';
+      if (pet.medical?.neutered) badgesHtml += '<span class="mini-badge">✂️ Castrado</span>';
+      if (pet.medical?.dewormed) badgesHtml += '<span class="mini-badge">🪱 Vermifugado</span>';
+      document.getElementById('modal-badges').innerHTML = badgesHtml;
+
+      let actionsHtml = '';
+      if (pet.whatsapp) {
+        const cleanPhone = pet.whatsapp.replace(/\D/g, '');
+        actionsHtml += `
+          <a href="https://wa.me/55${cleanPhone}?text=Ol%C3%A1!%20Vi%20o%20pet%20${encodeURIComponent(pet.name)}%20no%20DoaPet%20e%20gostaria%20de%20adot%C3%A1-lo!" target="_blank" class="btn-action btn-whatsapp">
+            💬 Falar com o Tutor no WhatsApp (${pet.whatsapp})
+          </a>
+        `;
+      } else {
+        actionsHtml += `<button class="btn-action" onclick="alert('Abra o aplicativo DoaPet no celular para conversar diretamente pelo chat interno!')">📲 Adotar pelo App DoaPet</button>`;
+      }
+      document.getElementById('modal-actions').innerHTML = actionsHtml;
+
+      document.getElementById('detail-modal').style.display = 'flex';
+    };
+
+    window.closeModal = function(e) {
+      document.getElementById('detail-modal').style.display = 'none';
+    };
+
+    window.closeModalDirect = function() {
+      document.getElementById('detail-modal').style.display = 'none';
+    };
+
+    // Leaflet Interactive Map
+    function initOrUpdateMap() {
+      if (!leafletMap) {
+        leafletMap = L.map('map-view').setView([-22.755, -43.452], 12);
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+          attribution: '© OpenStreetMap contributors'
+        }).addTo(leafletMap);
+      }
+
+      // Limpa marcadores anteriores
+      leafletMap.eachLayer(layer => {
+        if (layer instanceof L.Marker || layer instanceof L.CircleMarker) {
+          leafletMap.removeLayer(layer);
+        }
+      });
+
+      const bounds = [];
+
+      // Pets no mapa
+      allPets.forEach(p => {
+        if (p.location?.latitude && p.location?.longitude) {
+          const coords = [p.location.latitude, p.location.longitude];
+          bounds.push(coords);
+          const icon = (p.species === 'gato') ? '🐱' : '🐶';
+          L.marker(coords)
+            .addTo(leafletMap)
+            .bindPopup(`
+              <div style="font-family: sans-serif; text-align: center;">
+                <b style="font-size: 15px;">${icon} ${p.name}</b><br>
+                <span style="font-size: 12px; color: #64748b;">${p.breed || p.species} • Porte ${p.size || 'médio'}</span><br>
+                <p style="font-size: 12px; margin: 4px 0;">📍 ${p.locationHint || ''}</p>
+              </div>
+            `);
+        }
+      });
+
+      // Alertas SOS no mapa
+      allSosAlerts.forEach(s => {
+        if (s.location?.latitude && s.location?.longitude) {
+          const coords = [s.location.latitude, s.location.longitude];
+          bounds.push(coords);
+          L.marker(coords)
+            .addTo(leafletMap)
+            .bindPopup(`
+              <div style="font-family: sans-serif; text-align: center;">
+                <b style="color: #ef4444; font-size: 15px;">🆘 RESGATE SOS</b><br>
+                <span style="font-size: 12px;">${s.description || ''}</span><br>
+                <p style="font-size: 12px; margin: 4px 0;">📍 ${s.addressHint || ''}</p>
+              </div>
+            `);
+        }
+      });
+
+      if (bounds.length > 0) {
+        leafletMap.fitBounds(bounds, { padding: [50, 50], maxZoom: 15 });
+      }
+
+      setTimeout(() => {
+        leafletMap.invalidateSize();
+      }, 200);
+    }
+
+    // Inicia carregamento
+    loadData();
+  </script>
+
+  <!-- Leaflet JS -->
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+</body>
+</html>
